@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
 import { Users, FileSpreadsheet, Plus, Copy, AlertCircle, Download, UploadCloud } from 'lucide-react';
 import type { AppState, Staff, RequiredTraining } from '../types';
+import { isTrainingMatched } from '../utils/matcher';
 
 export default function AdminPanel({ appState, onRefresh }: { appState: AppState, onRefresh: () => void }) {
   const [activeSubTab, setActiveSubTab] = useState<'staff' | 'trainings' | 'status'>('status');
@@ -108,7 +109,7 @@ export default function AdminPanel({ appState, onRefresh }: { appState: AppState
       text += `■ ${training.courseName} (기한: ${training.deadline})\n`;
       const missingStaff = appState.staff.filter(s => {
         const hasCompleted = appState.completedTrainings.some(
-          c => (c.name || '').trim() === (s.name || '').trim() && (c.courseName.includes(training.courseName) || training.courseName.includes(c.courseName))
+          c => (c.name || '').trim() === (s.name || '').trim() && isTrainingMatched(c.courseName, training.courseName)
         );
         return !hasCompleted;
       });

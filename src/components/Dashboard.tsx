@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Search, Upload, CheckCircle2, Circle } from 'lucide-react';
+import { Search, Upload, CheckCircle2, Circle, Users, Clock } from 'lucide-react';
 import type { AppState, RequiredTraining, CompletionRecord } from '../types';
+import { isTrainingMatched } from '../utils/matcher';
 
 export default function Dashboard({ appState, onOpenUpload }: { appState: AppState, onOpenUpload: () => void }) {
   const [searchName, setSearchName] = useState('');
@@ -10,7 +11,7 @@ export default function Dashboard({ appState, onOpenUpload }: { appState: AppSta
   const myCompleted = appState.completedTrainings.filter(c => (c.name || '').trim() === (searchName || '').trim());
   
   const getTrainingStatus = (training: RequiredTraining) => {
-    return myCompleted.some(c => c.courseName.includes(training.courseName) || training.courseName.includes(c.courseName));
+    return myCompleted.some(c => isTrainingMatched(c.courseName, training.courseName));
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -22,6 +23,26 @@ export default function Dashboard({ appState, onOpenUpload }: { appState: AppSta
   const completionRate = appState.requiredTrainings.length > 0 
     ? Math.round(((appState.requiredTrainings.length - incompleteTrainings.length) / appState.requiredTrainings.length) * 100) 
     : 0;
+
+  // Calculate overall stats for default view
+  const totalStaff = appState.staff.length;
+  
+  const overallStats = appState.requiredTrainings.map(training => {
+    const completedCount = appState.staff.filter(s => {
+      const staffCompleted = appState.completedTrainings.filter(c => (c.name || '').trim() === (s.name || '').trim());
+      return staffCompleted.some(c => isTrainingMatched(c.courseName, training.courseName));
+    }).length;
+    
+    return {
+      ...training,
+      completedCount,
+      rate: totalStaff > 0 ? Math.round((completedCount / totalStaff) * 100) : 0
+    };
+  });
+
+  const recentCompletions = [...appState.completedTrainings]
+    .sort((a, b) => new Date(b.completedAt || b.date || 0).getTime() - new Date(a.completedAt || a.date || 0).getTime())
+    .slice(0, 5);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
@@ -115,7 +136,7 @@ export default function Dashboard({ appState, onOpenUpload }: { appState: AppSta
                     <div className="p-5 text-center text-slate-400 font-medium">이수 완료된 연수가 없습니다.</div>
                   ) : (
                     myCompleted.map(c => {
-                      const isRequired = appState.requiredTrainings.some(t => t.courseName.includes(c.courseName) || c.courseName.includes(t.courseName));
+                      const isRequired = appState.requiredTrainings.some(t => isTrainingMatched(c.courseName, t.courseName));
                       return (
                         <div key={c.id} className="p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100 relative opacity-80">
                           <h5 className="text-lg font-bold text-slate-800">{c.courseName}</h5>
@@ -130,13 +151,74 @@ export default function Dashboard({ appState, onOpenUpload }: { appState: AppSta
             </div>
           </>
         ) : (
-          <div className="flex items-center justify-center h-full bg-white border-2 border-slate-200 rounded-3xl p-10 min-h-[400px]">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200">
-                <Search className="w-10 h-10 text-slate-300" />
+          <div className="flex flex-col gap-6 h-full">
+            <div className="flex items-end justify-between px-2 shrink-0">
+              <div>
+                <h3 className="text-3xl font-extrabold text-slate-800">전체 교직원 이수 현황</h3>
+                <p className="text-slate-500 text-lg">필수 연수 현황과 최근 등록 내역입니다.</p>
               </div>
-              <h3 className="text-2xl font-extrabold text-slate-800 mb-2">이름을 검색해주세요</h3>
-              <p className="text-slate-500 text-lg font-medium">왼쪽 검색창에 성명을 입력하고 조회하면<br/>연수 현황을 확인할 수 있습니다.</p>
+              <div className="text-right">
+                <span className="text-4xl font-black text-indigo-600">{totalStaff}명</span>
+                <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">전체 인원</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 flex-1 min-h-0">
+              {/* Overall Required Trainings Status */}
+              <div className="bg-white border-2 border-slate-200 rounded-3xl p-6 flex flex-col overflow-hidden max-h-[600px]">
+                <div className="flex items-center justify-between mb-6 shrink-0">
+                  <h4 className="text-xl font-bold text-indigo-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-indigo-500" /> 연수별 이수 현황
+                  </h4>
+                </div>
+                <div className="space-y-4 overflow-y-auto pr-2 flex-1">
+                  {overallStats.length === 0 ? (
+                    <div className="p-5 text-center text-slate-400 font-medium">등록된 필수 연수가 없습니다.</div>
+                  ) : (
+                    overallStats.map(stat => (
+                      <div key={stat.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="flex justify-between items-start mb-2">
+                          <h5 className="text-lg font-bold text-slate-800 pr-4">{stat.courseName}</h5>
+                          <span className="text-sm font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg shrink-0">
+                            {stat.completedCount} / {totalStaff}명
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-2.5 mt-2">
+                          <div 
+                            className={`h-2.5 rounded-full ${stat.rate === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} 
+                            style={{ width: `${stat.rate}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Recent Completions */}
+              <div className="bg-white border-2 border-slate-200 rounded-3xl p-6 flex flex-col overflow-hidden max-h-[600px]">
+                <div className="flex items-center justify-between mb-6 shrink-0">
+                  <h4 className="text-xl font-bold text-indigo-900 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-indigo-500" /> 최근 등록된 이수 내역
+                  </h4>
+                </div>
+                <div className="space-y-4 overflow-y-auto pr-2 flex-1">
+                  {recentCompletions.length === 0 ? (
+                    <div className="p-5 text-center text-slate-400 font-medium">아직 등록된 이수 내역이 없습니다.</div>
+                  ) : (
+                    recentCompletions.map(c => (
+                      <div key={c.id} className="p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100/50 flex flex-col justify-center">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-bold text-emerald-700">{c.name}</span>
+                          <span className="text-xs font-bold text-slate-400">{c.date || c.completedAt ? new Date(c.date || c.completedAt).toLocaleDateString() : ''}</span>
+                        </div>
+                        <h5 className="text-md font-bold text-slate-800 truncate" title={c.courseName}>{c.courseName}</h5>
+                        <p className="text-slate-500 text-sm mt-1">{c.year}년 · {c.hours}시간</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}
