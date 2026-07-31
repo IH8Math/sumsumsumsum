@@ -7,7 +7,7 @@ export default function Dashboard({ appState, onOpenUpload }: { appState: AppSta
   const [searched, setSearched] = useState(false);
 
   // Computed state
-  const myCompleted = appState.completedTrainings.filter(c => c.name.trim() === searchName.trim());
+  const myCompleted = appState.completedTrainings.filter(c => (c.name || '').trim() === (searchName || '').trim());
   
   const getTrainingStatus = (training: RequiredTraining) => {
     return myCompleted.some(c => c.courseName.includes(training.courseName) || training.courseName.includes(c.courseName));

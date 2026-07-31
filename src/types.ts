@@ -17,9 +17,11 @@ export interface CompletionRecord {
   id: string;
   courseName: string;
   name: string;
+  staffName?: string;
   hours: number;
   year: number;
   completedAt: string;
+  date?: string;
 }
 
 export interface AppState {

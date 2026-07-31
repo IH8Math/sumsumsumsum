@@ -58,13 +58,15 @@ export default function UploadPDFModal({ onClose, onSuccess }: { onClose: () => 
       return;
     }
 
-    const record: CompletionRecord = {
+    const record = {
       id: `comp_${Date.now()}`,
       courseName: parsedData.courseName,
       name: parsedData.name,
+      staffName: parsedData.name, // For GAS
       hours: parsedData.hours || 0,
       year: parsedData.year || new Date().getFullYear(),
-      completedAt: new Date().toISOString()
+      completedAt: new Date().toISOString(),
+      date: new Date().toISOString().split('T')[0] // For GAS
     };
 
     try {

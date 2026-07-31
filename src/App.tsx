@@ -39,7 +39,11 @@ export default function App() {
       setAppState({
         staff: data?.staff || [],
         requiredTrainings: data?.requiredTrainings || [],
-        completedTrainings: data?.completedTrainings || []
+        completedTrainings: (data?.completedTrainings || []).map((c: any) => ({
+          ...c,
+          name: c.name || c.staffName || '',
+          completedAt: c.completedAt || c.date || ''
+        }))
       });
     } catch (err: any) {
       toast.error(err.message);
