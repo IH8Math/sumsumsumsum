@@ -102,6 +102,7 @@ export default function App() {
               <Dashboard 
                 appState={appState} 
                 onOpenUpload={() => setIsPdfModalOpen(true)} 
+                onRefresh={fetchData}
               />
             )}
             {activeTab === 'admin' && (

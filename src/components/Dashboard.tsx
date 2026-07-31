@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Search, Upload, CheckCircle2, Circle, Users, Clock } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { Search, Upload, CheckCircle2, Circle, Users, Clock, Trash2 } from 'lucide-react';
 import type { AppState, RequiredTraining, CompletionRecord } from '../types';
 import { isTrainingMatched } from '../utils/matcher';
 
-export default function Dashboard({ appState, onOpenUpload }: { appState: AppState, onOpenUpload: () => void }) {
+export default function Dashboard({ appState, onOpenUpload, onRefresh }: { appState: AppState, onOpenUpload: () => void, onRefresh: () => void }) {
   const [searchName, setSearchName] = useState('');
   const [searched, setSearched] = useState(false);
 
@@ -12,6 +13,27 @@ export default function Dashboard({ appState, onOpenUpload }: { appState: AppSta
   
   const getTrainingStatus = (training: RequiredTraining) => {
     return myCompleted.some(c => isTrainingMatched(c.courseName, training.courseName));
+  };
+
+  const handleDeleteCompletion = async (id: string) => {
+    if (!window.confirm("이수 내역을 삭제하시겠습니까?")) return;
+    
+    try {
+      const res = await fetch('/api/sheets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_completion', payload: { id } })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("이수 내역이 삭제되었습니다.");
+        onRefresh();
+      } else {
+        throw new Error(data.error || "삭제에 실패했습니다.");
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -138,10 +160,17 @@ export default function Dashboard({ appState, onOpenUpload }: { appState: AppSta
                     myCompleted.map(c => {
                       const isRequired = appState.requiredTrainings.some(t => isTrainingMatched(c.courseName, t.courseName));
                       return (
-                        <div key={c.id} className="p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100 relative opacity-80">
+                        <div key={c.id} className="p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100 relative opacity-80 pr-16 group">
                           <h5 className="text-lg font-bold text-slate-800">{c.courseName}</h5>
                           <p className="text-slate-500">{c.year}년 · {c.hours}시간 {isRequired ? '· 필수과정' : ''}</p>
-                          <span className="absolute top-4 right-4 text-emerald-500 font-bold text-xl">✓</span>
+                          <span className="absolute top-4 right-4 text-emerald-500 font-bold text-xl pointer-events-none group-hover:opacity-0 transition-opacity">✓</span>
+                          <button 
+                            onClick={() => handleDeleteCompletion(c.id)}
+                            className="absolute top-4 right-4 text-rose-400 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1"
+                            title="삭제"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
                         </div>
                       );
                     })
