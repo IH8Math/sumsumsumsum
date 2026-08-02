@@ -9,7 +9,6 @@ import { Search, Upload, FileText, Settings, ShieldAlert, CheckCircle2, Circle }
 import type { Staff, RequiredTraining, CompletionRecord, AppState } from './types';
 import Dashboard from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
-import UploadPDFModal from './components/UploadPDFModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'admin'>('dashboard');
@@ -18,7 +17,6 @@ export default function App() {
     requiredTrainings: [],
     completedTrainings: []
   });
-  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch initial data
@@ -101,7 +99,6 @@ export default function App() {
             {activeTab === 'dashboard' && (
               <Dashboard 
                 appState={appState} 
-                onOpenUpload={() => setIsPdfModalOpen(true)} 
                 onRefresh={fetchData}
               />
             )}
@@ -123,18 +120,6 @@ export default function App() {
           <span className="text-slate-400 text-xs font-bold">AI Analysis: Active</span>
         </div>
       </footer>
-
-      {/* PDF Upload Modal */}
-      {isPdfModalOpen && (
-        <UploadPDFModal 
-          appState={appState}
-          onClose={() => setIsPdfModalOpen(false)} 
-          onSuccess={() => {
-            setIsPdfModalOpen(false);
-            fetchData();
-          }}
-        />
-      )}
     </div>
   );
 }

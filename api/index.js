@@ -83,6 +83,9 @@ app.post("/api/sheets", async (req, res) => {
     } else if (action === 'save_required_training') {
       mockRequiredTrainings.push(payload);
       return res.json({ success: true, message: "Mock: 필수 연수 등록 완료" });
+    } else if (action === 'delete_required_training') {
+      mockRequiredTrainings = mockRequiredTrainings.filter(t => t.id !== payload.id);
+      return res.json({ success: true, message: "Mock: 필수 연수 삭제 완료" });
     } else if (action === 'save_completion') {
       mockCompletedTrainings.push(payload);
       return res.json({ success: true, message: "Mock: 이수 기록 저장 완료" });

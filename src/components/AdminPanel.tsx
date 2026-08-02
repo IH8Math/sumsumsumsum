@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
-import { Users, FileSpreadsheet, Plus, Copy, AlertCircle, Download, UploadCloud } from 'lucide-react';
+import { Users, FileSpreadsheet, Plus, Copy, AlertCircle, Download, UploadCloud, Trash2 } from 'lucide-react';
 import type { AppState, Staff, RequiredTraining } from '../types';
 import { isTrainingMatched } from '../utils/matcher';
 
@@ -99,6 +99,26 @@ export default function AdminPanel({ appState, onRefresh }: { appState: AppState
       onRefresh();
     } catch (err: any) {
       toast.error(err.message || '등록 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleDeleteTraining = async (id: string, courseName: string) => {
+    if (!window.confirm(`'${courseName}' 연수를 삭제하시겠습니까?`)) return;
+
+    try {
+      const res = await fetch('/api/sheets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_required_training', payload: { id } })
+      });
+      
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok || resData.error) throw new Error(resData.error || '서버 삭제 실패');
+
+      toast.success('연수가 삭제되었습니다.');
+      onRefresh();
+    } catch (err: any) {
+      toast.error(err.message || '삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -259,55 +279,98 @@ export default function AdminPanel({ appState, onRefresh }: { appState: AppState
 
         {/* Trainings Tab */}
         {activeSubTab === 'trainings' && (
-          <div className="max-w-2xl">
-            <h3 className="text-3xl font-extrabold text-slate-800 mb-8">새 필수 연수 등록</h3>
-            <form onSubmit={handleAddTraining} className="space-y-6 bg-slate-50 p-8 rounded-3xl border-2 border-slate-200">
-              <div>
-                <label className="block text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">연수명</label>
-                <input 
-                  type="text" 
-                  value={courseName}
-                  onChange={e => setCourseName(e.target.value)}
-                  className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl text-lg font-bold focus:outline-none focus:border-indigo-500 transition-colors"
-                  placeholder="예: 폭력예방 통합교육"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div className="space-y-6 bg-slate-50 p-8 rounded-3xl border-2 border-slate-200">
+              <h3 className="text-2xl font-extrabold text-slate-800">새 필수 연수 등록</h3>
+              <form onSubmit={handleAddTraining} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">주관 부서</label>
+                  <label className="block text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">연수명</label>
                   <input 
                     type="text" 
-                    value={department}
-                    onChange={e => setDepartment(e.target.value)}
+                    value={courseName}
+                    onChange={e => setCourseName(e.target.value)}
                     className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl text-lg font-bold focus:outline-none focus:border-indigo-500 transition-colors"
-                    placeholder="예: 인성교무부"
+                    placeholder="예: 폭력예방 통합교육"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">주관 부서</label>
+                    <input 
+                      type="text" 
+                      value={department}
+                      onChange={e => setDepartment(e.target.value)}
+                      className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl text-lg font-bold focus:outline-none focus:border-indigo-500 transition-colors"
+                      placeholder="예: 인성교무부"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">담당자 이름 (선택)</label>
+                    <input 
+                      type="text" 
+                      value={managerName}
+                      onChange={e => setManagerName(e.target.value)}
+                      className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl text-lg font-bold focus:outline-none focus:border-indigo-500 transition-colors"
+                      placeholder="예: 김철수"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">담당자 이름 (선택)</label>
+                  <label className="block text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">이수 기한</label>
                   <input 
                     type="text" 
-                    value={managerName}
-                    onChange={e => setManagerName(e.target.value)}
+                    value={deadline}
+                    onChange={e => setDeadline(e.target.value)}
                     className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl text-lg font-bold focus:outline-none focus:border-indigo-500 transition-colors"
-                    placeholder="예: 김철수"
+                    placeholder="예: 2024. 11. 30."
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">이수 기한</label>
-                <input 
-                  type="text" 
-                  value={deadline}
-                  onChange={e => setDeadline(e.target.value)}
-                  className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl text-lg font-bold focus:outline-none focus:border-indigo-500 transition-colors"
-                  placeholder="예: 2024. 11. 30."
-                />
-              </div>
-              <button type="submit" className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-xl transition-colors mt-4">
-                연수 등록하기
-              </button>
-            </form>
+                <button type="submit" className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-xl transition-colors mt-4 cursor-pointer">
+                  연수 등록하기
+                </button>
+              </form>
+            </div>
+
+            {/* Registered Trainings List */}
+            <div className="space-y-4">
+              <h3 className="text-2xl font-extrabold text-slate-800 flex items-center justify-between">
+                <span>현재 필수 연수 목록</span>
+                <span className="text-sm bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full">{appState.requiredTrainings.length}개</span>
+              </h3>
+              {appState.requiredTrainings.length === 0 ? (
+                <div className="p-8 bg-slate-50 rounded-2xl border-2 border-slate-200 text-center text-slate-400 font-bold">
+                  등록된 필수 연수가 없습니다.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {appState.requiredTrainings.map(t => (
+                    <div key={t.id} className="p-5 bg-white border-2 border-slate-200 rounded-2xl flex items-center justify-between shadow-sm hover:border-indigo-200 transition-colors">
+                      <div>
+                        <h4 className="font-extrabold text-slate-800 text-lg">{t.courseName}</h4>
+                        <div className="flex items-center gap-3 text-sm font-bold text-slate-500 mt-1">
+                          <span>부서: {t.department}</span>
+                          <span>·</span>
+                          <span className="text-rose-600">기한: {t.deadline}</span>
+                          {t.managerName && (
+                            <>
+                              <span>·</span>
+                              <span>담당: {t.managerName}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteTraining(t.id, t.courseName)}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                        title="연수 삭제"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
