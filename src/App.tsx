@@ -127,6 +127,7 @@ export default function App() {
       {/* PDF Upload Modal */}
       {isPdfModalOpen && (
         <UploadPDFModal 
+          appState={appState}
           onClose={() => setIsPdfModalOpen(false)} 
           onSuccess={() => {
             setIsPdfModalOpen(false);
