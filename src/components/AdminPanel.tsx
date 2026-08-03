@@ -5,7 +5,15 @@ import { Users, FileSpreadsheet, Plus, Copy, AlertCircle, Download, UploadCloud,
 import type { AppState, Staff, RequiredTraining } from '../types';
 import { isTrainingMatched } from '../utils/matcher';
 
-export default function AdminPanel({ appState, onRefresh }: { appState: AppState, onRefresh: () => void }) {
+export default function AdminPanel({ 
+  appState, 
+  onRefresh,
+  onDeleteTrainingLocal 
+}: { 
+  appState: AppState, 
+  onRefresh: () => void,
+  onDeleteTrainingLocal?: (id: string, courseName: string) => void
+}) {
   const [activeSubTab, setActiveSubTab] = useState<'staff' | 'trainings' | 'status'>('status');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -103,7 +111,10 @@ export default function AdminPanel({ appState, onRefresh }: { appState: AppState
   };
 
   const handleDeleteTraining = async (id: string, courseName: string) => {
-    if (!window.confirm(`'${courseName}' 연수를 삭제하시겠습니까?`)) return;
+    if (!window.confirm(`'${courseName}' 연수를 목록에서 삭제하시겠습니까?`)) return;
+
+    // 1. Optimistic removal from UI
+    onDeleteTrainingLocal?.(id, courseName);
 
     try {
       const res = await fetch('/api/sheets', {
@@ -113,12 +124,15 @@ export default function AdminPanel({ appState, onRefresh }: { appState: AppState
       });
       
       const resData = await res.json().catch(() => ({}));
-      if (!res.ok || resData.error) throw new Error(resData.error || '서버 삭제 실패');
-
-      toast.success('연수가 삭제되었습니다.');
+      if (res.ok && resData.success) {
+        toast.success('구글 시트에서 연수가 삭제되었습니다.');
+      } else {
+        toast.error(`구글 시트 반영 실패: ${resData.error || 'Apps Script를 새 버전으로 배포해야 합니다.'}`, { duration: 5000 });
+      }
       onRefresh();
     } catch (err: any) {
       toast.error(err.message || '삭제 중 오류가 발생했습니다.');
+      onRefresh();
     }
   };
 

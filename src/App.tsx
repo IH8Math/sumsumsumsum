@@ -66,6 +66,29 @@ export default function App() {
     fetchData();
   }, []);
 
+  const handleDeleteTrainingLocal = (id: string, courseName: string) => {
+    setAppState(prev => ({
+      ...prev,
+      requiredTrainings: prev.requiredTrainings.filter(t => 
+        !(String(t.id) === String(id) || (courseName && t.courseName === courseName))
+      )
+    }));
+  };
+
+  const handleDeleteCompletionLocal = (id: string, courseName: string, name: string) => {
+    setAppState(prev => ({
+      ...prev,
+      completedTrainings: prev.completedTrainings.filter(c => {
+        const isIdMatch = c.id && String(c.id) === String(id);
+        const targetName = c.name || c.staffName;
+        const isNameCourseMatch = targetName && c.courseName && 
+          String(targetName).trim() === String(name).trim() && 
+          String(c.courseName).trim() === String(courseName).trim();
+        return !isIdMatch && !isNameCourseMatch;
+      })
+    }));
+  };
+
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 font-sans overflow-hidden">
       <Toaster position="top-center" />
@@ -121,12 +144,14 @@ export default function App() {
               <Dashboard 
                 appState={appState} 
                 onRefresh={fetchData}
+                onDeleteCompletionLocal={handleDeleteCompletionLocal}
               />
             )}
             {activeTab === 'admin' && (
               <AdminPanel 
                 appState={appState} 
                 onRefresh={fetchData} 
+                onDeleteTrainingLocal={handleDeleteTrainingLocal}
               />
             )}
           </>

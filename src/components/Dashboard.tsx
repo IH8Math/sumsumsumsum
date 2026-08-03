@@ -11,9 +11,10 @@ import { isTrainingMatched } from '../utils/matcher';
 interface DashboardProps {
   appState: AppState;
   onRefresh: () => void;
+  onDeleteCompletionLocal?: (id: string, courseName: string, name: string) => void;
 }
 
-export default function Dashboard({ appState, onRefresh }: DashboardProps) {
+export default function Dashboard({ appState, onRefresh, onDeleteCompletionLocal }: DashboardProps) {
   // --- Form State (Manual / AI Fill) ---
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -142,21 +143,25 @@ export default function Dashboard({ appState, onRefresh }: DashboardProps) {
   const handleDeleteCompletion = async (id: string, courseName: string, name: string) => {
     if (!window.confirm(`'${name}' 선생님의 '${courseName}' 이수 기록을 삭제하시겠습니까?`)) return;
 
+    // 1. Optimistic removal from UI state
+    onDeleteCompletionLocal?.(id, courseName, name);
+
     try {
       const res = await fetch('/api/sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'delete_completion', payload: { id, courseName, name } })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
-        toast.success("이수 내역이 삭제되었습니다.");
-        onRefresh();
+        toast.success("구글 시트에서 이수 내역이 삭제되었습니다.");
       } else {
-        throw new Error(data.error || "삭제에 실패했습니다.");
+        toast.error(`시트 삭제 실패: ${data.error || 'Apps Script를 새 버전으로 배포했는지 확인해주세요.'}`, { duration: 5000 });
       }
+      onRefresh();
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || '삭제 중 오류가 발생했습니다.');
+      onRefresh();
     }
   };
 

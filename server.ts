@@ -132,7 +132,20 @@ async function startServer() {
       const text = await response.text();
       
       if (!response.ok) {
-        throw new Error(`GAS Server Error (${response.status}): ${text.substring(0, 100)}`);
+        if (response.status === 404) {
+          return res.status(404).json({
+            error: "Google Apps Script 웹앱 주소를 찾을 수 없습니다 (404 오류). GAS_URL 주소가 정확한지, URL 끝이 '/exec'로 끝나고 정상 배포되었는지 확인해주세요."
+          });
+        }
+        return res.status(response.status).json({
+          error: `Google Apps Script 서버 오류 (${response.status}). 구글 웹앱 배포 상태를 확인해주세요.`
+        });
+      }
+
+      if (text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
+        return res.status(500).json({
+          error: "Google Apps Script가 JSON이 아닌 HTML(구글 로그인/오류) 페이지를 반환했습니다. Apps Script 배포 설정에서 '웹앱으로 실행' -> '액세스 권한: 모든 사용자(Anyone)'로 설정되어 있는지 확인하세요."
+        });
       }
       
       try {
@@ -140,7 +153,9 @@ async function startServer() {
         res.json(data);
       } catch (parseError) {
         console.error("GAS JSON Parse Error:", text.substring(0, 500));
-        res.status(500).json({ error: "Google Apps Script 설정 오류: Web App이 JSON이 아닌 HTML을 반환했습니다. 앱스스크립트 새 버전 배포 시 '액세스 권한: 모든 사용자(Anyone)'로 설정되어 있는지 확인하세요.", details: text.substring(0, 100) });
+        res.status(500).json({ 
+          error: "Google Apps Script 응답 형식 오류: JSON 데이터로 변환할 수 없습니다. gas_script.gs 코드가 최신 상태인지 확인하세요." 
+        });
       }
     } catch (error: any) {
       clearTimeout(timeoutId);
