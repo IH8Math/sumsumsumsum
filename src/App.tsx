@@ -9,6 +9,7 @@ import { Search, Upload, FileText, Settings, ShieldAlert, CheckCircle2, Circle }
 import type { Staff, RequiredTraining, CompletionRecord, AppState } from './types';
 import Dashboard from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
+import LoadingScreen from './components/LoadingScreen';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'admin'>('dashboard');
@@ -113,10 +114,7 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 p-10 overflow-auto">
         {isInitialLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-500 font-bold gap-3">
-            <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-lg">데이터를 불러오는 중입니다...</p>
-          </div>
+          <LoadingScreen onRetry={() => fetchData(false)} />
         ) : (
           <>
             {activeTab === 'dashboard' && (

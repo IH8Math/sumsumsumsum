@@ -75,9 +75,9 @@ export default function Dashboard({ appState, onRefresh }: DashboardProps) {
   };
 
   // --- Real-time duplicate check ---
-  const existingRecords = formData.name.trim() && formData.courseName.trim()
+  const existingRecords = String(formData.name || '').trim() && String(formData.courseName || '').trim()
     ? appState.completedTrainings.filter(c => 
-        (c.name || c.staffName || '').trim() === formData.name.trim() && 
+        String(c.name || c.staffName || '').trim() === String(formData.name || '').trim() && 
         isTrainingMatched(c.courseName, formData.courseName)
       )
     : [];
@@ -166,7 +166,7 @@ export default function Dashboard({ appState, onRefresh }: DashboardProps) {
     .map(t => {
       const completedStaff = appState.staff.filter(s => 
         appState.completedTrainings.some(c => 
-          (c.name || c.staffName || '').trim() === (s.name || '').trim() && 
+          String(c.name || c.staffName || '').trim() === String(s.name || '').trim() && 
           isTrainingMatched(c.courseName, t.courseName)
         )
       );
@@ -484,7 +484,7 @@ export default function Dashboard({ appState, onRefresh }: DashboardProps) {
               {appState.requiredTrainings.map(training => {
                 const completedStaffList = appState.staff.filter(s => 
                   appState.completedTrainings.some(c => 
-                    (c.name || c.staffName || '').trim() === (s.name || '').trim() && 
+                    String(c.name || c.staffName || '').trim() === String(s.name || '').trim() && 
                     isTrainingMatched(c.courseName, training.courseName)
                   )
                 );

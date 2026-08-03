@@ -1,4 +1,7 @@
-export const normalizeText = (text: string) => text.replace(/\s+/g, '').toLowerCase();
+export const normalizeText = (text: any): string => {
+  if (text === null || text === undefined) return '';
+  return String(text).replace(/\s+/g, '').toLowerCase();
+};
 
 const trainingCategories = [
   {
@@ -39,11 +42,13 @@ const trainingCategories = [
   }
 ];
 
-export const isTrainingMatched = (completedCourseName: string, requiredCourseName: string) => {
+export const isTrainingMatched = (completedCourseName: any, requiredCourseName: any) => {
   if (!completedCourseName || !requiredCourseName) return false;
   
   const normCompleted = normalizeText(completedCourseName);
   const normRequired = normalizeText(requiredCourseName);
+
+  if (!normCompleted || !normRequired) return false;
   
   // 1. Direct inclusion
   if (normCompleted.includes(normRequired) || normRequired.includes(normCompleted)) {
