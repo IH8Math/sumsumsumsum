@@ -1,13 +1,36 @@
+function doGet(e) {
+  return handleRequest(e);
+}
+
 function doPost(e) {
+  return handleRequest(e);
+}
+
+function handleRequest(e) {
   try {
-    const requestData = JSON.parse(e.postData.contents);
-    const action = requestData.action;
-    const payload = requestData.payload;
-    
-    // 이 스프레드시트의 ID를 입력하세요.
-    // 예: https://docs.google.com/spreadsheets/d/XXXXXXXX/edit 의 XXXXXXXX 부분
-    const SPREADSHEET_ID = "여기에_스프레드시트_ID를_입력하세요";
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    let action = 'get_all';
+    let payload = {};
+
+    if (e && e.parameter && e.parameter.action) {
+      action = e.parameter.action;
+    }
+
+    if (e && e.postData && e.postData.contents) {
+      try {
+        const body = JSON.parse(e.postData.contents);
+        if (body.action) action = body.action;
+        if (body.payload) payload = body.payload;
+      } catch(err) {}
+    }
+
+    // 제공된 구글 시트 ID
+    const SPREADSHEET_ID = "1K9MGNWEm6VsPUz8xxIUtnFMufqj_YX0WZ1IMUsEvoN8";
+    let ss;
+    try {
+      ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    } catch(err) {
+      ss = SpreadsheetApp.getActiveSpreadsheet();
+    }
     
     let result = { success: false };
     
@@ -40,7 +63,7 @@ function doPost(e) {
       sheet.appendRow([payload.id, payload.staffName, payload.courseName, payload.hours, payload.year, payload.date, ""]);
       result = { success: true, message: "이수기록 저장 완료" };
       
-    } else if (action === 'get_all') {
+    } else if (action === 'get_all' || action === 'get_data') {
       const getSheetData = (sheetName) => {
         const sheet = ss.getSheetByName(sheetName);
         if (!sheet || sheet.getLastRow() <= 1) return [];
@@ -69,18 +92,21 @@ function doPost(e) {
 
     } else if (action === 'delete_required_training') {
       let sheet = ss.getSheetByName("필수연수");
+      let deletedCount = 0;
       if (sheet && sheet.getLastRow() > 1) {
         const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
         for (let i = data.length - 1; i >= 0; i--) {
           if (String(data[i][0]) === String(payload.id) || (payload.courseName && String(data[i][1]).trim() === String(payload.courseName).trim())) {
             sheet.deleteRow(i + 2);
+            deletedCount++;
           }
         }
       }
-      result = { success: true, message: "필수 연수 삭제 완료" };
+      result = { success: true, message: `필수 연수 삭제 완료 (${deletedCount}건)` };
 
     } else if (action === 'delete_completion') {
       let sheet = ss.getSheetByName("이수기록");
+      let deletedCount = 0;
       if (sheet && sheet.getLastRow() > 1) {
         const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
         for (let i = data.length - 1; i >= 0; i--) {
@@ -92,17 +118,18 @@ function doPost(e) {
             
           if (isIdMatch || isNameCourseMatch) {
             sheet.deleteRow(i + 2);
+            deletedCount++;
           }
         }
       }
-      result = { success: true, message: "이수 기록 삭제 완료" };
+      result = { success: true, message: `이수 기록 삭제 완료 (${deletedCount}건)` };
     }
     
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
       
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ error: error.message }))
+    return ContentService.createTextOutput(JSON.stringify({ error: error.message, stack: error.stack }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
