@@ -127,7 +127,8 @@ export default function AdminPanel({
       if (res.ok && resData.success) {
         toast.success('구글 시트에서 연수가 삭제되었습니다.');
       } else {
-        toast.error(`구글 시트 반영 실패: ${resData.error || 'Apps Script를 새 버전으로 배포해야 합니다.'}`, { duration: 5000 });
+        const errorMsg = resData.error || '구글 시트 삭제 처리 중 오류가 발생했습니다.';
+        toast.error(`구글 시트 반영 실패: ${errorMsg}`, { duration: 6000 });
       }
       onRefresh();
     } catch (err: any) {

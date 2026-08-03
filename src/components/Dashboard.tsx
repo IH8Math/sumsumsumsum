@@ -156,7 +156,8 @@ export default function Dashboard({ appState, onRefresh, onDeleteCompletionLocal
       if (res.ok && data.success) {
         toast.success("구글 시트에서 이수 내역이 삭제되었습니다.");
       } else {
-        toast.error(`시트 삭제 실패: ${data.error || 'Apps Script를 새 버전으로 배포했는지 확인해주세요.'}`, { duration: 5000 });
+        const errorMsg = data.error || '구글 시트 이수 내역 삭제 중 오류가 발생했습니다.';
+        toast.error(`시트 삭제 실패: ${errorMsg}`, { duration: 6000 });
       }
       onRefresh();
     } catch (error: any) {
