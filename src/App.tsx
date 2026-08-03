@@ -66,12 +66,14 @@ export default function App() {
     fetchData();
   }, []);
 
-  const handleDeleteTrainingLocal = (id: string, courseName: string) => {
+  const handleDeleteTrainingLocal = (id: string, courseName?: string) => {
     setAppState(prev => ({
       ...prev,
-      requiredTrainings: prev.requiredTrainings.filter(t => 
-        !(String(t.id) === String(id) || (courseName && t.courseName === courseName))
-      )
+      requiredTrainings: prev.requiredTrainings.filter(t => {
+        if (id && String(t.id) === String(id)) return false;
+        if (!id && courseName && t.courseName === courseName) return false;
+        return true;
+      })
     }));
   };
 
