@@ -113,9 +113,9 @@ async function startServer() {
       return res.status(400).json({ error: "Unknown mock action" });
     }
 
-    // Actual GAS fetch with 15s timeout
+    // Actual GAS fetch with 30s timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
       const response = await fetch(gasUrl, {
@@ -161,7 +161,7 @@ async function startServer() {
       clearTimeout(timeoutId);
       console.error("GAS Fetch Error:", error);
       if (error.name === 'AbortError') {
-        return res.status(504).json({ error: "Google Apps Script 응답 시간 초과 (15초). 구글 앱스 스크립트 실행 시간이 길어지고 있습니다." });
+        return res.status(504).json({ error: "Google Apps Script 응답 시간 초과 (30초). 구글 서비스 응답 시간이 길어졌거나 시트 연동 오류입니다. 잠시 후 다시 시도해 주세요." });
       }
       res.status(500).json({ error: `Google Sheets 통신 중 오류: ${error.message}` });
     }

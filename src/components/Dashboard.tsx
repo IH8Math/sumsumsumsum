@@ -87,10 +87,21 @@ export default function Dashboard({ appState, onRefresh, onDeleteCompletionLocal
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
+    const inputName = formData.name.trim();
+    if (!inputName) {
       toast.error('성명을 입력해 주세요.');
       return;
     }
+
+    // 인적사항 검증: 등록된 교직원 명단에 있는지 확인
+    if (appState.staff && appState.staff.length > 0) {
+      const isRegistered = appState.staff.some(s => String(s.name || '').trim() === inputName);
+      if (!isRegistered) {
+        toast.error(`'${inputName}' 교직원은 등록된 인적사항 명단에 없습니다. 정확한 이름을 입력하거나 관리자 모드에서 교직원을 등록해 주세요.`);
+        return;
+      }
+    }
+
     if (!formData.courseName.trim()) {
       toast.error('연수 과정명을 입력해 주세요.');
       return;
@@ -338,8 +349,21 @@ export default function Dashboard({ appState, onRefresh, onDeleteCompletionLocal
           <form onSubmit={handleSave} className="space-y-4">
             {/* Staff Name */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
-                <User className="w-3.5 h-3.5 text-slate-400" /> 성명 <span className="text-red-500">*</span>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <User className="w-3.5 h-3.5 text-slate-400" /> 성명 <span className="text-red-500">*</span>
+                </span>
+                {formData.name.trim() !== '' && (
+                  appState.staff.some(s => String(s.name || '').trim() === formData.name.trim()) ? (
+                    <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-md">
+                      <Check className="w-3 h-3" /> 등록된 교직원 확인됨
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-bold text-rose-600 flex items-center gap-1 bg-rose-50 px-2 py-0.5 rounded-md">
+                      <X className="w-3 h-3" /> 미등록 교직원 (등록 필요)
+                    </span>
+                  )
+                )}
               </label>
               <input 
                 type="text" 
@@ -347,7 +371,11 @@ export default function Dashboard({ appState, onRefresh, onDeleteCompletionLocal
                 placeholder="예: 홍길동 (교직원 명단 선택 가능)"
                 value={formData.name} 
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-500 transition-colors"
+                className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:bg-white transition-colors ${
+                  formData.name.trim() !== '' && !appState.staff.some(s => String(s.name || '').trim() === formData.name.trim()) && appState.staff.length > 0
+                    ? 'border-rose-300 focus:border-rose-500 bg-rose-50/30'
+                    : 'border-slate-200 focus:border-indigo-500'
+                }`}
                 required
               />
               <datalist id="staff-list-main">
