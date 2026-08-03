@@ -17,11 +17,21 @@ export default function App() {
     requiredTrainings: [],
     completedTrainings: []
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch initial data
-  const fetchData = async () => {
-    setIsLoading(true);
+  // Fetch initial data or refresh
+  const fetchData = async (isBackground = false) => {
+    if (!isBackground) {
+      if (appState.staff.length === 0 && appState.requiredTrainings.length === 0) {
+        setIsInitialLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
+    } else {
+      setIsRefreshing(true);
+    }
+
     try {
       const res = await fetch('/api/sheets', {
         method: 'POST',
@@ -44,9 +54,10 @@ export default function App() {
         }))
       });
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(err.message || '데이터 불러오기 중 오류가 발생했습니다.');
     } finally {
-      setIsLoading(false);
+      setIsInitialLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -64,7 +75,16 @@ export default function App() {
           <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
             <ShieldAlert className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">교직원 연수 관리 포털</h1>
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-3">
+              교직원 연수 관리 포털
+              {isRefreshing && (
+                <span className="text-xs bg-indigo-100 text-indigo-700 font-bold px-2.5 py-1 rounded-full animate-pulse">
+                  🔄 데이터 동기화 중...
+                </span>
+              )}
+            </h1>
+          </div>
         </div>
         <nav className="flex gap-2 bg-slate-100 p-1 rounded-xl">
           <button
@@ -92,8 +112,11 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 p-10 overflow-auto">
-        {isLoading ? (
-          <div className="flex justify-center py-20 text-xl font-bold text-slate-500">데이터를 불러오는 중입니다...</div>
+        {isInitialLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-slate-500 font-bold gap-3">
+            <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-lg">데이터를 불러오는 중입니다...</p>
+          </div>
         ) : (
           <>
             {activeTab === 'dashboard' && (

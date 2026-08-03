@@ -102,14 +102,21 @@ app.post("/api/sheets", async (req, res) => {
     return res.status(400).json({ error: "Unknown mock action" });
   }
 
+  // Actual GAS fetch with 15s timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
   try {
     const response = await fetch(gasUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      redirect: "follow",
+      signal: controller.signal,
       body: JSON.stringify({ action, payload }),
     });
+    clearTimeout(timeoutId);
     
     const text = await response.text();
     
@@ -122,10 +129,14 @@ app.post("/api/sheets", async (req, res) => {
       res.json(data);
     } catch (parseError) {
       console.error("GAS JSON Parse Error:", text.substring(0, 500));
-      res.status(500).json({ error: "Google Apps Script 설정 오류: Web App이 JSON이 아닌 HTML을 반환했습니다.", details: text.substring(0, 100) });
+      res.status(500).json({ error: "Google Apps Script 설정 오류: Web App이 JSON이 아닌 HTML을 반환했습니다. 앱스스크립트 새 버전 배포 시 '액세스 권한: 모든 사용자(Anyone)'로 설정되어 있는지 확인하세요.", details: text.substring(0, 100) });
     }
   } catch (error) {
+    clearTimeout(timeoutId);
     console.error("GAS Fetch Error:", error);
+    if (error.name === 'AbortError') {
+      return res.status(504).json({ error: "Google Apps Script 응답 시간 초과 (15초). 구글 앱스 스크립트 실행 시간이 길어지고 있습니다." });
+    }
     res.status(500).json({ error: `Google Sheets 통신 중 오류: ${error.message}` });
   }
 });
