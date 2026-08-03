@@ -109,7 +109,7 @@ export default function AdminPanel({ appState, onRefresh }: { appState: AppState
       const res = await fetch('/api/sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete_required_training', payload: { id } })
+        body: JSON.stringify({ action: 'delete_required_training', payload: { id, courseName } })
       });
       
       const resData = await res.json().catch(() => ({}));

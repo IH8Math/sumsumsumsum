@@ -66,6 +66,36 @@ function doPost(e) {
         requiredTrainings: trainingData,
         completedTrainings: completionData
       };
+
+    } else if (action === 'delete_required_training') {
+      let sheet = ss.getSheetByName("필수연수");
+      if (sheet && sheet.getLastRow() > 1) {
+        const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
+        for (let i = data.length - 1; i >= 0; i--) {
+          if (String(data[i][0]) === String(payload.id) || (payload.courseName && String(data[i][1]).trim() === String(payload.courseName).trim())) {
+            sheet.deleteRow(i + 2);
+          }
+        }
+      }
+      result = { success: true, message: "필수 연수 삭제 완료" };
+
+    } else if (action === 'delete_completion') {
+      let sheet = ss.getSheetByName("이수기록");
+      if (sheet && sheet.getLastRow() > 1) {
+        const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
+        for (let i = data.length - 1; i >= 0; i--) {
+          const isIdMatch = String(data[i][0]) === String(payload.id);
+          const targetName = payload.name || payload.staffName;
+          const isNameCourseMatch = targetName && payload.courseName && 
+            String(data[i][1]).trim() === String(targetName).trim() && 
+            String(data[i][2]).trim() === String(payload.courseName).trim();
+            
+          if (isIdMatch || isNameCourseMatch) {
+            sheet.deleteRow(i + 2);
+          }
+        }
+      }
+      result = { success: true, message: "이수 기록 삭제 완료" };
     }
     
     return ContentService.createTextOutput(JSON.stringify(result))

@@ -146,7 +146,7 @@ export default function Dashboard({ appState, onRefresh }: DashboardProps) {
       const res = await fetch('/api/sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete_completion', payload: { id } })
+        body: JSON.stringify({ action: 'delete_completion', payload: { id, courseName, name } })
       });
       const data = await res.json();
       if (res.ok && data.success) {
