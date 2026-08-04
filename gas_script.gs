@@ -34,7 +34,7 @@ function handleRequest(e) {
     
     let result = { success: false };
 
-    // 표준 시트 가져오기 (우선순위: 교직원 / 필수연수 / 이수기록)
+    // 표준 시트 가져오기 (교직원 / 필수연수 / 이수기록)
     const getSheet = (preferredName, fallbackName) => {
       let sheet = ss.getSheetByName(preferredName);
       if (sheet) return sheet;
@@ -45,7 +45,7 @@ function handleRequest(e) {
       return ss.insertSheet(preferredName);
     };
 
-    // 시트 데이터 읽기 (우선순위 1개 시트에서만 읽어 데이터 중복 방지)
+    // 시트 데이터 읽기 (1개 우선 시트에서만 읽어 중복 방지)
     const getSingleSheetData = (preferredName, fallbackName) => {
       let sheet = ss.getSheetByName(preferredName);
       if (!sheet && fallbackName) {
@@ -101,7 +101,7 @@ function handleRequest(e) {
       };
 
     } else if (action === 'delete_required_training') {
-      // 필수연수 시트에서만 해당 연수 고유 ID로 정확히 삭제 (이수기록 탭은 건드리지 않음)
+      // 필수 연수 삭제: "이수기록" 탭은 건드리지 않고 오직 "필수연수" 시트에서만 고유 ID 또는 연수명 1건 삭제
       let deletedCount = 0;
       const targetSheets = ["필수연수", "필수연수목록"];
       
@@ -109,23 +109,30 @@ function handleRequest(e) {
         let sheet = ss.getSheetByName(name);
         if (sheet && sheet.getLastRow() > 1) {
           const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
-          for (let i = data.length - 1; i >= 0; i--) {
-            const rowId = String(data[i][0]).trim();
-            const rowCourseName = String(data[i][1]).trim();
-            
-            // ID가 전달된 경우 ID 우선 정확히 매칭, 없을 때만 연수명 일치 매칭
-            let isTarget = false;
-            if (payload.id && rowId === String(payload.id).trim()) {
-              isTarget = true;
-            } else if (!payload.id && payload.courseName && rowCourseName === String(payload.courseName).trim()) {
-              isTarget = true;
+          
+          // 1차 시도: ID 매칭으로 딱 1건 삭제
+          let deletedInSheet = false;
+          if (payload.id) {
+            for (let i = data.length - 1; i >= 0; i--) {
+              const rowId = String(data[i][0]).trim();
+              if (rowId === String(payload.id).trim()) {
+                sheet.deleteRow(i + 2);
+                deletedCount++;
+                deletedInSheet = true;
+                break;
+              }
             }
-
-            if (isTarget) {
-              sheet.deleteRow(i + 2);
-              deletedCount++;
-              // 고유 ID 삭제인 경우 1건 지우면 중단
-              if (payload.id) break;
+          }
+          
+          // 2차 시도: ID 매칭이 안되었고 연수명이 전달된 경우, 딱 1건만 삭제
+          if (!deletedInSheet && payload.courseName) {
+            for (let i = data.length - 1; i >= 0; i--) {
+              const rowCourseName = String(data[i][1]).trim();
+              if (rowCourseName === String(payload.courseName).trim()) {
+                sheet.deleteRow(i + 2);
+                deletedCount++;
+                break; // 1개만 삭제하고 중단
+              }
             }
           }
         }
@@ -153,6 +160,7 @@ function handleRequest(e) {
             if (isIdMatch || isNameCourseMatch) {
               sheet.deleteRow(i + 2);
               deletedCount++;
+              break; // 딱 1개만 삭제
             }
           }
         }

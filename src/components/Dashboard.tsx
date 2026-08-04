@@ -93,13 +93,16 @@ export default function Dashboard({ appState, onRefresh, onDeleteCompletionLocal
       return;
     }
 
-    // 인적사항 검증: 등록된 교직원 명단에 있는지 확인
-    if (appState.staff && appState.staff.length > 0) {
-      const isRegistered = appState.staff.some(s => String(s.name || '').trim() === inputName);
-      if (!isRegistered) {
-        toast.error(`'${inputName}' 교직원은 등록된 인적사항 명단에 없습니다. 정확한 이름을 입력하거나 관리자 모드에서 교직원을 등록해 주세요.`);
-        return;
-      }
+    // 인적사항 검증: 등록된 교직원 명단에 존재하는지 검증
+    if (!appState.staff || appState.staff.length === 0) {
+      toast.error('등록된 교직원 명단이 없습니다. 먼저 관리자 모드에서 인적사항(교직원 엑셀 파일)을 등록해 주세요.');
+      return;
+    }
+
+    const isRegistered = appState.staff.some(s => String(s.name || '').trim() === inputName);
+    if (!isRegistered) {
+      toast.error(`'${inputName}' 교직원은 등록된 인적사항 명단에 없습니다. 정확한 성명을 입력하거나 관리자 모드에서 교직원을 등록해 주세요.`);
+      return;
     }
 
     if (!formData.courseName.trim()) {

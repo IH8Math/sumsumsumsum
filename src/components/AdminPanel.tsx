@@ -111,7 +111,7 @@ export default function AdminPanel({
   };
 
   const handleDeleteTraining = async (id: string, courseName: string) => {
-    if (!window.confirm(`'${courseName}' 연수를 목록에서 삭제하시겠습니까?`)) return;
+    if (!window.confirm(`'${courseName}' 연수를 필수 연수 목록에서 삭제하시겠습니까?\n(교직원분들이 이미 업로드한 이수 기록은 삭제되지 않고 안전하게 보존됩니다.)`)) return;
 
     // 1. Optimistic removal from UI
     onDeleteTrainingLocal?.(id, courseName);
@@ -125,7 +125,7 @@ export default function AdminPanel({
       
       const resData = await res.json().catch(() => ({}));
       if (res.ok && resData.success) {
-        toast.success('구글 시트에서 연수가 삭제되었습니다.');
+        toast.success('구글 시트 필수 연수 목록에서 연수가 정상 삭제되었습니다.');
       } else {
         const errorMsg = resData.error || '구글 시트 삭제 처리 중 오류가 발생했습니다.';
         toast.error(`구글 시트 반영 실패: ${errorMsg}`, { duration: 6000 });

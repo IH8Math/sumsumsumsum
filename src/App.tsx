@@ -45,9 +45,15 @@ export default function App() {
         throw new Error(data?.error || '데이터를 불러오는데 실패했습니다.');
       }
       
+      const rawTrainings = data?.requiredTrainings || [];
+      const formattedTrainings = rawTrainings.map((t: any, index: number) => ({
+        ...t,
+        id: (t.id && String(t.id).trim() !== '') ? String(t.id).trim() : `train_row_${index}`
+      }));
+
       setAppState({
         staff: data?.staff || [],
-        requiredTrainings: data?.requiredTrainings || [],
+        requiredTrainings: formattedTrainings,
         completedTrainings: (data?.completedTrainings || []).map((c: any) => ({
           ...c,
           name: c.name || c.staffName || '',
@@ -66,15 +72,27 @@ export default function App() {
     fetchData();
   }, []);
 
-  const handleDeleteTrainingLocal = (id: string, courseName?: string) => {
-    setAppState(prev => ({
-      ...prev,
-      requiredTrainings: prev.requiredTrainings.filter(t => {
-        if (id && String(t.id) === String(id)) return false;
-        if (!id && courseName && t.courseName === courseName) return false;
+  const handleDeleteTrainingLocal = (targetId: string, targetCourseName?: string) => {
+    setAppState(prev => {
+      let removed = false;
+      const updatedTrainings = prev.requiredTrainings.filter(t => {
+        if (removed) return true; // 이미 1개 지웠으면 이후 동일 조건 객체들은 살림
+        
+        const isIdMatch = targetId && String(t.id) === String(targetId);
+        const isNameMatch = !targetId && targetCourseName && String(t.courseName).trim() === String(targetCourseName).trim();
+        
+        if (isIdMatch || isNameMatch) {
+          removed = true;
+          return false;
+        }
         return true;
-      })
-    }));
+      });
+
+      return {
+        ...prev,
+        requiredTrainings: updatedTrainings
+      };
+    });
   };
 
   const handleDeleteCompletionLocal = (id: string, courseName: string, name: string) => {
