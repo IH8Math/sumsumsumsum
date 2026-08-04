@@ -34,9 +34,13 @@ export default function App() {
     }
 
     try {
+      const savedGasUrl = localStorage.getItem('gas_web_app_url');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (savedGasUrl) headers['x-gas-url'] = savedGasUrl;
+
       const res = await fetch('/api/sheets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ action: 'get_all' })
       });
       const data = await res.json().catch(() => null);

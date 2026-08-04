@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
-import { Users, FileSpreadsheet, Plus, Copy, AlertCircle, Download, UploadCloud, Trash2 } from 'lucide-react';
+import { Users, FileSpreadsheet, Plus, Copy, AlertCircle, Download, UploadCloud, Trash2, Settings, Link, CheckCircle2, RefreshCw } from 'lucide-react';
 import type { AppState, Staff, RequiredTraining } from '../types';
 import { isTrainingMatched } from '../utils/matcher';
 
@@ -14,9 +14,32 @@ export default function AdminPanel({
   onRefresh: () => void,
   onDeleteTrainingLocal?: (id: string, courseName: string) => void
 }) {
-  const [activeSubTab, setActiveSubTab] = useState<'staff' | 'trainings' | 'status'>('status');
+  const [activeSubTab, setActiveSubTab] = useState<'status' | 'staff' | 'trainings' | 'settings'>('status');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Custom GAS Web App URL state
+  const [gasUrlInput, setGasUrlInput] = useState<string>(() => {
+    return localStorage.getItem('gas_web_app_url') || '';
+  });
+
+  const saveGasUrl = () => {
+    const trimmed = gasUrlInput.trim();
+    if (trimmed && !trimmed.startsWith('https://script.google.com/')) {
+      toast.error('올바른 Google Apps Script 웹앱 URL이 아닙니다. (https://script.google.com/... 형태이어야 합니다)');
+      return;
+    }
+    localStorage.setItem('gas_web_app_url', trimmed);
+    toast.success('구글 시트 연동 URL이 저장되었습니다.');
+    onRefresh();
+  };
+
+  const getHeaders = () => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const savedUrl = localStorage.getItem('gas_web_app_url');
+    if (savedUrl) headers['x-gas-url'] = savedUrl;
+    return headers;
+  };
 
   // New Training Form
   const [courseName, setCourseName] = useState('');
@@ -57,7 +80,7 @@ export default function AdminPanel({
 
       const res = await fetch('/api/sheets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ action: 'save_staff', payload: staffData })
       });
 
@@ -92,7 +115,7 @@ export default function AdminPanel({
     try {
       const res = await fetch('/api/sheets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ action: 'save_required_training', payload: newTraining })
       });
       
@@ -119,7 +142,7 @@ export default function AdminPanel({
     try {
       const res = await fetch('/api/sheets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ action: 'delete_required_training', payload: { id, courseName } })
       });
       
@@ -166,34 +189,120 @@ export default function AdminPanel({
   return (
     <div className="bg-white rounded-3xl border-2 border-slate-200 overflow-hidden flex flex-col h-full max-h-[800px]">
       {/* Sub Navigation */}
-      <div className="flex border-b-2 border-slate-200 bg-slate-50 p-4 gap-3 shrink-0">
+      <div className="flex flex-wrap items-center justify-between border-b-2 border-slate-200 bg-slate-50 p-4 gap-3 shrink-0">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveSubTab('status')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-base transition-colors ${
+              activeSubTab === 'status' ? 'bg-white shadow-sm text-indigo-700 border-2 border-indigo-100' : 'text-slate-500 hover:bg-slate-100 border-2 border-transparent'
+            }`}
+          >
+            이수 현황판
+          </button>
+          <button
+            onClick={() => setActiveSubTab('staff')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-base transition-colors ${
+              activeSubTab === 'staff' ? 'bg-white shadow-sm text-indigo-700 border-2 border-indigo-100' : 'text-slate-500 hover:bg-slate-100 border-2 border-transparent'
+            }`}
+          >
+            인적사항 관리
+          </button>
+          <button
+            onClick={() => setActiveSubTab('trainings')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-base transition-colors ${
+              activeSubTab === 'trainings' ? 'bg-white shadow-sm text-indigo-700 border-2 border-indigo-100' : 'text-slate-500 hover:bg-slate-100 border-2 border-transparent'
+            }`}
+          >
+            필수 연수 등록
+          </button>
+          <button
+            onClick={() => setActiveSubTab('settings')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-base flex items-center gap-2 transition-colors ${
+              activeSubTab === 'settings' ? 'bg-white shadow-sm text-indigo-700 border-2 border-indigo-100' : 'text-slate-500 hover:bg-slate-100 border-2 border-transparent'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            구글 시트 연동 설정
+          </button>
+        </div>
+
         <button
-          onClick={() => setActiveSubTab('status')}
-          className={`px-6 py-2.5 rounded-xl font-bold text-lg transition-colors ${
-            activeSubTab === 'status' ? 'bg-white shadow-sm text-indigo-700 border-2 border-indigo-100' : 'text-slate-500 hover:bg-slate-100 border-2 border-transparent'
-          }`}
+          onClick={onRefresh}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold rounded-lg text-xs transition-colors cursor-pointer"
+          title="구글 시트 동기화"
         >
-          이수 현황판
-        </button>
-        <button
-          onClick={() => setActiveSubTab('staff')}
-          className={`px-6 py-2.5 rounded-xl font-bold text-lg transition-colors ${
-            activeSubTab === 'staff' ? 'bg-white shadow-sm text-indigo-700 border-2 border-indigo-100' : 'text-slate-500 hover:bg-slate-100 border-2 border-transparent'
-          }`}
-        >
-          인적사항 관리
-        </button>
-        <button
-          onClick={() => setActiveSubTab('trainings')}
-          className={`px-6 py-2.5 rounded-xl font-bold text-lg transition-colors ${
-            activeSubTab === 'trainings' ? 'bg-white shadow-sm text-indigo-700 border-2 border-indigo-100' : 'text-slate-500 hover:bg-slate-100 border-2 border-transparent'
-          }`}
-        >
-          필수 연수 등록
+          <RefreshCw className="w-3.5 h-3.5" />
+          시트 데이터 동기화
         </button>
       </div>
 
-      <div className="p-10 overflow-y-auto flex-1">
+      <div className="p-8 overflow-y-auto flex-1">
+        {/* Settings Tab */}
+        {activeSubTab === 'settings' && (
+          <div className="space-y-8 max-w-4xl mx-auto">
+            <div className="bg-indigo-50/70 p-6 rounded-2xl border-2 border-indigo-100 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-extrabold text-indigo-950 flex items-center gap-2">
+                  <Link className="w-5 h-5 text-indigo-600" />
+                  Google Apps Script 웹앱 URL 연동
+                </h3>
+                <span className="text-xs font-bold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-md flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> 기본 구글 시트 주소 연결됨
+                </span>
+              </div>
+              
+              <p className="text-sm font-medium text-slate-600 leading-relaxed">
+                현재 연동 구글 시트 ID: <code className="bg-white px-2 py-0.5 rounded font-mono font-bold text-indigo-700 border border-slate-200">1K9MGNWEm6VsPUz8xxIUtnFMufqj_YX0WZ1IMUsEvoN8</code>
+                <br />
+                직접 배포하신 구글 앱스크립트 웹앱 URL(https://script.google.com/macros/s/.../exec)이 있으신 경우 아래에 입력하여 지정할 수 있습니다.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <input
+                  type="text"
+                  placeholder="기본 구글 웹앱 URL 사용 중 (변경할 경우에만 입력)"
+                  value={gasUrlInput}
+                  onChange={(e) => setGasUrlInput(e.target.value)}
+                  className="flex-1 px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                />
+                <button
+                  onClick={saveGasUrl}
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors shrink-0 cursor-pointer"
+                >
+                  URL 저장
+                </button>
+                {gasUrlInput && (
+                  <button
+                    onClick={() => {
+                      setGasUrlInput('');
+                      localStorage.removeItem('gas_web_app_url');
+                      toast.success('기본 연동 URL로 초기화되었습니다.');
+                      onRefresh();
+                    }}
+                    className="px-4 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-sm rounded-xl transition-colors shrink-0 cursor-pointer"
+                  >
+                    초기화
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-2xl border-2 border-slate-200 space-y-4">
+              <h4 className="font-extrabold text-slate-800 text-lg flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-500" />
+                구글 앱스크립트(GAS) 연동 및 삭제 시 동작 원리
+              </h4>
+              <ul className="text-sm font-medium text-slate-600 space-y-2 list-disc pl-5 leading-relaxed">
+                <li>
+                  <b>구글 시트 반영 오류 시</b>: 앱스크립트 편집기에서 최신 코드(<code className="bg-white px-1.5 py-0.5 border rounded">gas_script.gs</code>)를 작성하신 후, <b>[배포] &gt; [새 배포]</b>를 눌러 <b>액세스 권한: 모든 사용자(Anyone)</b>로 배포해주시면 완벽히 연동됩니다.
+                </li>
+                <li>
+                  <b>필수 연수 삭제 시</b>: 필수 연수를 삭제하면 구글 시트의 [필수연수] 시트에서 해당 항목이 지워지며, 교직원이 기존에 등록해 놓은 이수 기록 시트는 지워지지 않고 안전하게 보존됩니다.
+                </li>
+              </ul>
+            </div>
+          </div>
+        )}
         {/* Status Tab */}
         {activeSubTab === 'status' && (
           <div className="space-y-6">

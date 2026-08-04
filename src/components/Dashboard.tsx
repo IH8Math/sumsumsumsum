@@ -124,9 +124,13 @@ export default function Dashboard({ appState, onRefresh, onDeleteCompletionLocal
     };
 
     try {
+      const savedGasUrl = localStorage.getItem('gas_web_app_url');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (savedGasUrl) headers['x-gas-url'] = savedGasUrl;
+
       const res = await fetch('/api/sheets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ action: 'save_completion', payload: record })
       });
       
@@ -161,9 +165,13 @@ export default function Dashboard({ appState, onRefresh, onDeleteCompletionLocal
     onDeleteCompletionLocal?.(id, courseName, name);
 
     try {
+      const savedGasUrl = localStorage.getItem('gas_web_app_url');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (savedGasUrl) headers['x-gas-url'] = savedGasUrl;
+
       const res = await fetch('/api/sheets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ action: 'delete_completion', payload: { id, courseName, name } })
       });
       const data = await res.json().catch(() => ({}));

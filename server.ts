@@ -30,6 +30,7 @@ async function startServer() {
   };
 
   // Mock DB in memory if GAS_URL is not set
+  const DEFAULT_GAS_URL = process.env.GAS_URL || "https://script.google.com/macros/s/AKfycbx_YOUR_MOCK_FALLBACK_IF_ANY/exec";
   let mockStaff: any[] = [];
   let mockRequiredTrainings: any[] = [];
   let mockCompletedTrainings: any[] = [];
@@ -84,7 +85,8 @@ async function startServer() {
   // API Route: Proxy to Google Apps Script (Sheets)
   app.post("/api/sheets", async (req, res) => {
     const { action, payload } = req.body;
-    const gasUrl = process.env.GAS_URL;
+    const clientGasUrl = req.headers['x-gas-url'] as string;
+    const gasUrl = clientGasUrl?.trim() || process.env.GAS_URL || DEFAULT_GAS_URL;
 
     if (!gasUrl || gasUrl.trim() === "" || gasUrl.includes("YOUR_")) {
       // Mock mode
