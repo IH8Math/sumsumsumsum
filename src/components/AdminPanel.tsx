@@ -31,13 +31,10 @@ function handleRequest(e) {
     }
 
     let ss = null;
-    const TARGET_SPREADSHEET_ID = "1K9MGNWEm6VsPUz8xxIUtnFMufqj_YX0WZ1IMUsEvoN8";
+    const TARGET_SPREADSHEET_ID = "17703Z3_e5n-iKRLS2JKoRLpa8ftOvPOzapCmzqOIKwE";
 
     try {
-      const activeSs = SpreadsheetApp.getActiveSpreadsheet();
-      if (activeSs && activeSs.getId() === TARGET_SPREADSHEET_ID) {
-        ss = activeSs;
-      }
+      ss = SpreadsheetApp.getActiveSpreadsheet();
     } catch(err) {}
     
     if (!ss && TARGET_SPREADSHEET_ID) {
