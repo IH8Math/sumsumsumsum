@@ -24,18 +24,25 @@ function handleRequest(e) {
     }
 
     let ss = null;
+    const TARGET_SPREADSHEET_ID = "1K9MGNWEm6VsPUz8xxIUtnFMufqj_YX0WZ1IMUsEvoN8";
+
     try {
-      ss = SpreadsheetApp.getActiveSpreadsheet();
+      const activeSs = SpreadsheetApp.getActiveSpreadsheet();
+      if (activeSs && activeSs.getId() === TARGET_SPREADSHEET_ID) {
+        ss = activeSs;
+      }
     } catch(err) {}
     
-    // 만약 독립형 Apps Script로 배포된 경우 아래 SPREADSHEET_ID에 본인의 구글 시트 ID를 입력해 사용합니다.
+    if (!ss && TARGET_SPREADSHEET_ID) {
+      try {
+        ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
+      } catch(err) {}
+    }
+
     if (!ss) {
-      const SPREADSHEET_ID = ""; // 예: "1abcXYZ..." (구글 시트 주소 /d/ 와 /edit 사이 문자열)
-      if (SPREADSHEET_ID && SPREADSHEET_ID.trim() !== "") {
-        try {
-          ss = SpreadsheetApp.openById(SPREADSHEET_ID.trim());
-        } catch(err) {}
-      }
+      try {
+        ss = SpreadsheetApp.getActiveSpreadsheet();
+      } catch(err) {}
     }
 
     if (!ss) {
