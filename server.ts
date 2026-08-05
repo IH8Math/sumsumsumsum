@@ -115,12 +115,16 @@ async function startServer() {
       return res.status(400).json({ error: "Unknown mock action" });
     }
 
-    // Actual GAS fetch with 60s (1min) timeout
+    // Actual GAS fetch with 20s timeout (to avoid 504 Gateway Timeout from Nginx/Cloud Run)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+    const targetUrl = gasUrl.includes("?") 
+      ? `${gasUrl}&action=${encodeURIComponent(action)}` 
+      : `${gasUrl}?action=${encodeURIComponent(action)}`;
 
     try {
-      const response = await fetch(gasUrl, {
+      const response = await fetch(targetUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -146,7 +150,7 @@ async function startServer() {
 
       if (text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
         return res.status(500).json({
-          error: "Google Apps Script가 JSON이 아닌 HTML(구글 로그인/오류) 페이지를 반환했습니다. Apps Script 배포 설정에서 '웹앱으로 실행' -> '액세스 권한: 모든 사용자(Anyone)'로 설정되어 있는지 확인하세요."
+          error: "Google Apps Script가 JSON이 아닌 HTML(구글 로그인/권한승인) 페이지를 반환했습니다. 등록하신 웹앱 URL을 브라우저 새 탭에 직접 접속하여 [구글 권한 승인]을 완료해주시거나, 배포 설정에서 '액세스 권한: 모든 사용자(Anyone)'로 되어있는지 확인하세요."
         });
       }
       
@@ -163,7 +167,7 @@ async function startServer() {
       clearTimeout(timeoutId);
       console.error("GAS Fetch Error:", error);
       if (error.name === 'AbortError') {
-        return res.status(504).json({ error: "Google Apps Script 응답 시간 초과 (1분/60초). 구글 서비스 응답 시간이 길어졌거나 시트 연동 오류입니다. 잠시 후 다시 시도해 주세요." });
+        return res.status(504).json({ error: "Google Apps Script 응답 시간 초과 (20초). 웹앱 URL을 브라우저 새 탭 주소창에 직접 입력하여 구글 계정 [권한 승인]이 완료되었는지 확인해 주세요." });
       }
       res.status(500).json({ error: `Google Sheets 통신 중 오류: ${error.message}` });
     }

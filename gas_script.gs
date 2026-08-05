@@ -23,13 +23,22 @@ function handleRequest(e) {
       } catch(err) {}
     }
 
-    // 구글 시트 ID
-    const SPREADSHEET_ID = "1K9MGNWEm6VsPUz8xxIUtnFMufqj_YX0WZ1IMUsEvoN8";
-    let ss;
+    let ss = null;
     try {
-      ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    } catch(err) {
       ss = SpreadsheetApp.getActiveSpreadsheet();
+    } catch(err) {}
+    
+    if (!ss) {
+      const SPREADSHEET_ID = "1K9MGNWEm6VsPUz8xxIUtnFMufqj_YX0WZ1IMUsEvoN8";
+      try {
+        ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+      } catch(err) {}
+    }
+
+    if (!ss) {
+      return ContentService.createTextOutput(JSON.stringify({ 
+        error: "연결된 구글 시트를 찾을 수 없습니다. 구글 시트 상단 [확장 프로그램] > [Apps Script]에서 스크립트를 작성하여 배포해주세요." 
+      })).setMimeType(ContentService.MimeType.JSON);
     }
     
     let result = { success: false };
