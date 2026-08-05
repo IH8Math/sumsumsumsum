@@ -367,6 +367,54 @@ export default function AdminPanel({
     }
   };
 
+  const handleSyncCurrentStaffToSheet = async () => {
+    if (appState.staff.length === 0) {
+      toast.error('전송할 교직원 데이터가 없습니다.');
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const res = await fetch('/api/sheets', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ action: 'save_staff', payload: appState.staff })
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok || resData.error) throw new Error(resData.error || '구글 시트 저장 실패');
+      
+      toast.success(`구글 시트 '교직원' 탭에 ${appState.staff.length}명의 데이터가 정상 저장(동기화)되었습니다!`);
+      onRefresh();
+    } catch (err: any) {
+      toast.error(err.message || '구글 시트 저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSyncCurrentTrainingsToSheet = async () => {
+    if (appState.requiredTrainings.length === 0) {
+      toast.error('전송할 필수 연수 데이터가 없습니다.');
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const res = await fetch('/api/sheets', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ action: 'save_all_required_trainings', payload: appState.requiredTrainings })
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok || resData.error) throw new Error(resData.error || '구글 시트 저장 실패');
+      
+      toast.success(`구글 시트 '필수연수' 탭에 ${appState.requiredTrainings.length}개의 연수 목록이 정상 저장(동기화)되었습니다!`);
+      onRefresh();
+    } catch (err: any) {
+      toast.error(err.message || '구글 시트 저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleAddTraining = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!courseName || !department || !deadline) {
@@ -675,10 +723,22 @@ export default function AdminPanel({
             </div>
 
             <div>
-              <h4 className="text-xl font-extrabold text-slate-800 mb-4 flex items-center gap-3">
-                현재 등록된 교직원
-                <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-sm font-bold">{appState.staff.length}명</span>
-              </h4>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+                <h4 className="text-xl font-extrabold text-slate-800 flex items-center gap-3">
+                  현재 등록된 교직원
+                  <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-sm font-bold">{appState.staff.length}명</span>
+                </h4>
+                {appState.staff.length > 0 && (
+                  <button
+                    onClick={handleSyncCurrentStaffToSheet}
+                    disabled={isUploading}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors shadow-sm cursor-pointer shrink-0 disabled:opacity-50"
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                    구글 시트로 이 명렬표 전송하기
+                  </button>
+                )}
+              </div>
               <div className="bg-white rounded-2xl border-2 border-slate-200 max-h-[300px] overflow-y-auto">
                 <div className="grid grid-cols-3 gap-4 font-bold text-slate-400 uppercase tracking-widest text-sm p-5 border-b-2 border-slate-100 bg-slate-50 sticky top-0">
                   <div>성명</div>
@@ -757,10 +817,22 @@ export default function AdminPanel({
 
             {/* Registered Trainings List */}
             <div className="space-y-4">
-              <h3 className="text-2xl font-extrabold text-slate-800 flex items-center justify-between">
-                <span>현재 필수 연수 목록</span>
-                <span className="text-sm bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full">{appState.requiredTrainings.length}개</span>
-              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <h3 className="text-2xl font-extrabold text-slate-800 flex items-center gap-3">
+                  <span>현재 필수 연수 목록</span>
+                  <span className="text-sm bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full">{appState.requiredTrainings.length}개</span>
+                </h3>
+                {appState.requiredTrainings.length > 0 && (
+                  <button
+                    onClick={handleSyncCurrentTrainingsToSheet}
+                    disabled={isUploading}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors shadow-sm cursor-pointer shrink-0 disabled:opacity-50"
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                    구글 시트로 이 연수목록 전송하기
+                  </button>
+                )}
+              </div>
               {appState.requiredTrainings.length === 0 ? (
                 <div className="p-8 bg-slate-50 rounded-2xl border-2 border-slate-200 text-center text-slate-400 font-bold">
                   등록된 필수 연수가 없습니다.

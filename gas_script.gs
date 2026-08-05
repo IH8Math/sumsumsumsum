@@ -103,6 +103,16 @@ function handleRequest(e) {
       }
       result = { success: true, message: "필수연수 저장 완료" };
 
+    } else if (action === 'save_all_required_trainings') {
+      let sheet = getTrainingSheet();
+      sheet.clear();
+      sheet.appendRow(["ID", "연수명", "주관부서", "이수기한", "담당자"]);
+      const rows = (payload || []).map(t => [t.id, t.courseName, t.department, t.deadline, t.managerName || ""]);
+      if (rows.length > 0) {
+        sheet.getRange(2, 1, rows.length, 5).setValues(rows);
+      }
+      result = { success: true, message: "필수연수 목록 전체 저장 완료" };
+
     } else if (action === 'save_completion') {
       let sheet = getCompletionSheet();
       if (sheet.getLastRow() === 0) {

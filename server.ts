@@ -96,6 +96,9 @@ async function startServer() {
       } else if (action === 'save_required_training') {
         mockRequiredTrainings.push(payload);
         return res.json({ success: true, message: "Mock: 필수 연수 등록 완료" });
+      } else if (action === 'save_all_required_trainings') {
+        mockRequiredTrainings = payload;
+        return res.json({ success: true, message: "Mock: 필수 연수 목록 전체 저장 완료" });
       } else if (action === 'delete_required_training') {
         mockRequiredTrainings = mockRequiredTrainings.filter(t => t.id !== payload.id);
         return res.json({ success: true, message: "Mock: 필수 연수 삭제 완료" });
