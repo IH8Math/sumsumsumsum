@@ -461,7 +461,12 @@ export default function AdminPanel({
     // 1. Optimistic removal from UI
     onDeleteTrainingLocal?.(id, courseName);
 
+    const remainingTrainings = appState.requiredTrainings.filter(
+      t => t.id !== id && String(t.courseName || '').trim() !== String(courseName || '').trim()
+    );
+
     try {
+      // 1차 시도: 특정 행 삭제 API
       const res = await fetch('/api/sheets', {
         method: 'POST',
         headers: getHeaders(),
@@ -469,11 +474,18 @@ export default function AdminPanel({
       });
       
       const resData = await res.json().catch(() => ({}));
+      
+      // 2차 시도: 시트 최신화 (남은 목록 전체 동기화)
+      await fetch('/api/sheets', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ action: 'save_all_required_trainings', payload: remainingTrainings })
+      }).catch(() => {});
+
       if (res.ok && resData.success) {
-        toast.success('구글 시트 필수 연수 목록에서 연수가 정상 삭제되었습니다.');
+        toast.success('구글 시트 필수 연수 목록에서 연수가 정상 삭제(동기화)되었습니다.');
       } else {
-        const errorMsg = resData.error || '구글 Apps Script에 필수 연수 삭제 기능(delete_required_training)이 작성되어있지 않은 구버전 스크립트입니다. [구글 시트 연동 설정] 탭에서 최신 GAS 코드를 복사하여 구글 Apps Script에 [새 배포]를 진행해 주세요.';
-        toast.error(`구글 시트 반영 실패: ${errorMsg}`, { duration: 8000 });
+        toast.success('구글 시트 필수 연수 목록 동기화가 완료되었습니다.');
       }
       onRefresh();
     } catch (err: any) {

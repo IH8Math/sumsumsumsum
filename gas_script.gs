@@ -206,14 +206,17 @@ function handleRequest(e) {
         const sheetName = sheet.getName();
         if (sheet.getLastRow() <= 1) continue;
         
-        if (sheetName.includes('연수') || sheetName.includes('Sheet') || sheetName.includes('시트') || sheetName.includes('목록')) {
+        // 탭 이름 체크 (필수연수, 연수, Sheet, 시트, 목록, 또는 전체)
+        const isTargetSheet = sheetName.includes('연수') || sheetName.includes('Sheet') || sheetName.includes('시트') || sheetName.includes('목록') || sheetName.includes('필수') || targetSheets.length === 1;
+        
+        if (isTargetSheet) {
           const data = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getValues();
           
           for (let i = data.length - 1; i >= 1; i--) {
             const rowValues = data[i].map(v => norm(v));
             
-            const isIdMatch = targetIdNorm && !targetIdNorm.startsWith('train_row_') && rowValues.some(cell => cell === targetIdNorm);
-            const isCourseMatch = targetCourseNorm && targetCourseNorm !== '' && rowValues.some(cell => cell === targetCourseNorm || cell.includes(targetCourseNorm));
+            const isIdMatch = targetIdNorm && !targetIdNorm.startsWith('train_') && rowValues.some(cell => cell === targetIdNorm);
+            const isCourseMatch = targetCourseNorm && targetCourseNorm !== '' && rowValues.some(cell => cell === targetCourseNorm || (cell.length > 1 && (targetCourseNorm.includes(cell) || cell.includes(targetCourseNorm))));
 
             if (isIdMatch || isCourseMatch) {
               sheet.deleteRow(i + 1);
