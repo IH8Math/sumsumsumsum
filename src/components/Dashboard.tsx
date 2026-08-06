@@ -164,6 +164,7 @@ export default function Dashboard({ appState, onRefresh, onDeleteCompletionLocal
     // 1. Optimistic removal from UI state
     onDeleteCompletionLocal?.(id, courseName, name);
 
+    setIsSaving(true);
     try {
       const savedGasUrl = localStorage.getItem('gas_web_app_url');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -185,6 +186,8 @@ export default function Dashboard({ appState, onRefresh, onDeleteCompletionLocal
     } catch (error: any) {
       toast.error(error.message || '삭제 중 오류가 발생했습니다.');
       onRefresh();
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -679,9 +682,17 @@ export default function Dashboard({ appState, onRefresh, onDeleteCompletionLocal
           )}
 
         </div>
-
       </div>
-
+      
+      {isSaving && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-full mx-4">
+            <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mb-4" />
+            <h3 className="text-xl font-bold text-slate-800 mb-2">처리 중입니다...</h3>
+            <p className="text-slate-500 text-center text-sm font-medium">이수 내역을 안전하게 동기화하고 있습니다.<br/>잠시만 기다려주세요.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
