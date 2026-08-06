@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
-import { Users, FileSpreadsheet, Plus, Copy, AlertCircle, Download, UploadCloud, Trash2, Settings, Link, CheckCircle2, RefreshCw, Code, Check } from 'lucide-react';
+import { Users, FileSpreadsheet, Plus, Copy, AlertCircle, Download, UploadCloud, Trash2, Settings, Link, CheckCircle2, RefreshCw, Code, Check, Loader2 } from 'lucide-react';
 import type { AppState, Staff, RequiredTraining } from '../types';
 import { isTrainingMatched } from '../utils/matcher';
 
