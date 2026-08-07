@@ -9,7 +9,6 @@ interface LoadingScreenProps {
 export default function LoadingScreen({ onRetry, statusText }: LoadingScreenProps) {
   const [progress, setProgress] = useState(15);
   const [currentStep, setCurrentStep] = useState(0);
-  const [isSlow, setIsSlow] = useState(false);
 
   const steps = [
     { label: 'Google Sheets 데이터베이스 서버 접속 중...', tip: '구글 앱스 스크립트(GAS) 연동 웹앱으로 보안 통신을 시도합니다.' },
@@ -24,16 +23,10 @@ export default function LoadingScreen({ onRetry, statusText }: LoadingScreenProp
     const timer2 = setTimeout(() => { setProgress(75); setCurrentStep(2); }, 2200);
     const timer3 = setTimeout(() => { setProgress(90); setCurrentStep(3); }, 4500);
 
-    // Timeout alert after 10 seconds if GAS response takes too long
-    const slowTimer = setTimeout(() => {
-      setIsSlow(true);
-    }, 10000);
-
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
-      clearTimeout(slowTimer);
     };
   }, []);
 
@@ -89,28 +82,6 @@ export default function LoadingScreen({ onRetry, statusText }: LoadingScreenProp
             {steps[currentStep]?.tip || '구글 앱스 스크립트 연결 상태에 따라 로딩 속도가 차이날 수 있습니다.'}
           </p>
         </div>
-
-        {/* Slow Network / Timeout Notice */}
-        {isSlow && (
-          <div className="bg-amber-950/40 border border-amber-500/50 rounded-2xl p-4 text-left text-xs space-y-3 animate-fade-in">
-            <div className="flex items-center gap-2 text-amber-300 font-bold">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
-              <span>구글 응답이 평소보다 지연되고 있습니다.</span>
-            </div>
-            <p className="text-amber-200/80 leading-relaxed">
-              구글 시트(GAS) 실행 시간이 길어지고 있습니다. 잠시만 기다리시거나 [재시도]를 눌러 다시 응답을 요청해보세요.
-            </p>
-            {onRetry && (
-              <button
-                onClick={onRetry}
-                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <RefreshCw className="w-4 h-4" />
-                데이터 다시 불러오기
-              </button>
-            )}
-          </div>
-        )}
 
       </div>
     </div>

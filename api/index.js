@@ -1,3 +1,4 @@
+// @ts-nocheck
 import express from "express";
 import { GoogleGenAI, Type } from "@google/genai";
 

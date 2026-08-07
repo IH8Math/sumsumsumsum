@@ -118,9 +118,9 @@ async function startServer() {
       return res.status(400).json({ error: "Unknown mock action" });
     }
 
-    // Actual GAS fetch with 20s timeout (to avoid 504 Gateway Timeout from Nginx/Cloud Run)
+    // Actual GAS fetch with 45s timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
     const targetUrl = gasUrl.includes("?") 
       ? `${gasUrl}&action=${encodeURIComponent(action)}` 
@@ -170,7 +170,7 @@ async function startServer() {
       clearTimeout(timeoutId);
       console.error("GAS Fetch Error:", error);
       if (error.name === 'AbortError') {
-        return res.status(504).json({ error: "Google Apps Script 응답 시간 초과 (20초). 웹앱 URL을 브라우저 새 탭 주소창에 직접 입력하여 구글 계정 [권한 승인]이 완료되었는지 확인해 주세요." });
+        return res.status(504).json({ error: "구글 시트 응답 시간이 지연되었습니다. 잠시 후 다시 시도해 주세요." });
       }
       res.status(500).json({ error: `Google Sheets 통신 중 오류: ${error.message}` });
     }

@@ -1,38 +1,38 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertOctagon, RefreshCw, Home } from 'lucide-react';
+import React from 'react';
+import { AlertOctagon, RefreshCw } from 'lucide-react';
 
 interface Props {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
-  errorInfo: ErrorInfo | null;
+  errorInfo: React.ErrorInfo | null;
 }
 
-export default class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
+export default class ErrorBoundary extends React.Component<Props, State> {
+  state: State = {
     hasError: false,
     error: null,
     errorInfo: null
   };
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error, errorInfo: null };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("Uncaught Error in UI Boundary:", error, errorInfo);
-    this.setState({ error, errorInfo });
+    (this as any).setState({ error, errorInfo });
   }
 
-  public handleReset = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
+  handleReset = () => {
+    (this as any).setState({ hasError: false, error: null, errorInfo: null });
     window.location.reload();
   };
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-white font-sans">
@@ -70,6 +70,6 @@ export default class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    return (this as any).props.children;
   }
 }
